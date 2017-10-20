@@ -1,13 +1,26 @@
-FROM alpine:latest
+FROM centos:latest
 
-LABEL mainttainer='nostrum@tuta.io'
+LABEL maintainer='nostrum@tuta.io'
 
-RUN ((echo "3th3rp4d";echo "3th3rp4d"))  | adduser etherpad 
+RUN adduser etherpad
 
-RUN apk update && apk upgrade; \
-  apk add gzip git curl python openssl-dev nodejs nodejs-npm; \
-  git clone git://github.com/ether/etherpad-lite.git;\
-  chown -R etherpad. etherpad-lite
+RUN curl --silent --location https://rpm.nodesource.com/setup_6.x | bash -
 
-RUN cd etherpad-lite; \
-  su etherpad -c bin/run.sh
+RUN yum update -y && \
+  yum install -y \
+  gzip git curl python \
+  openssl-devel nodejs && \
+  yum -y groupinstall "Development Tools" && \
+  yum clean all
+
+USER etherpad
+
+WORKDIR /home/etherpad
+
+RUN git clone git://github.com/ether/etherpad-lite.git
+
+COPY settings.json etherpad-lite/settings.json
+
+WORKDIR /home/etherpad/etherpad-lite
+
+ENTRYPOINT ["bin/run.sh"]
